@@ -170,7 +170,7 @@ func main() {
 	var freeMBytes int
 	var msg string
 	var err os.Error
-	fmt.Println(mooseSays(fmt.Sprintf("I'll let you know if there are less than %v MB free on /, /tmp, /var, /var/log, /var/cache, /usr or /home, just keep me running in the backround.", MIN_MB)))
+	fmt.Println(mooseSays(fmt.Sprintf("I'll let you know if there are less than %v MB free on /, /tmp, /var, /var/log, /var/cache, /usr or /home. Just let me run in the background.", MIN_MB)))
 	for {
 		for _, mountpoint := range getRelevantMountpoints() {
 			freeMBytes, err = checkFreeSpaceMBytes(mountpoint)
