@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	WAIT_SEC = 60
+	WAIT_SEC = 120
 	COWTYPE = "moose"
 	MIN_MB = 100
-	VERSION = 0.1
+	VERSION = 0.2
 )
 
 /*
@@ -170,6 +170,7 @@ func main() {
 	var freeMBytes int
 	var msg string
 	var err os.Error
+	fmt.Println(mooseSays(fmt.Sprintf("I'll let you know if there are less than %v MB free on /, /tmp, /var, /var/log, /var/cache, /usr or /home, just keep me running in the backround.", MIN_MB)))
 	for {
 		for _, mountpoint := range getRelevantMountpoints() {
 			freeMBytes, err = checkFreeSpaceMBytes(mountpoint)
@@ -178,7 +179,7 @@ func main() {
 				log.Println("Aborting.")
 				os.Exit(1)
 			}
-			if freeMBytes > 0 { //< MIN_MB {
+			if freeMBytes < MIN_MB { //freeMBytes > 0
 				msg = fmt.Sprintf("Only %v MB free on %v", freeMBytes, mountpoint)
 				writeToAll(mooseSays(msg))
 			}
