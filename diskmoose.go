@@ -6,21 +6,22 @@
 package main
 
 import (
+	"bytes"
+	"errors" // os/exec for newer versions of Go
 	"fmt"
 	"log"
-	"exec" // os/exec for newer versions of Go
-	"bytes"
-	"strings"
-	"strconv"
-	"time"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
 	WAIT_SEC = 120
-	COWTYPE = "moose"
-	MIN_MB = 100
-	VERSION = 0.2
+	COWTYPE  = "moose"
+	MIN_MB   = 100
+	VERSION  = 0.2
 )
 
 /*
@@ -29,12 +30,12 @@ const (
    2. Able to write to all pts's
    3. Able to check the disk space of a mountpoint
    4. Able to use cowsay -f moose and warn users
- */
+*/
 
 func isRelevant(mountpoint string) bool {
 	switch mountpoint {
-		case "/", "/tmp", "/var", "/var/log", "/var/cache", "/usr", "/home":
-			return true
+	case "/", "/tmp", "/var", "/var/log", "/var/cache", "/usr", "/home":
+		return true
 	}
 	return false
 }
@@ -119,7 +120,7 @@ func getFields(s string) []string {
 }
 
 // Get the number of free MB for a given mountpoint
-func checkFreeSpaceMBytes(mountpoint string) (int, os.Error) {
+func checkFreeSpaceMBytes(mountpoint string) (int, error) {
 	cmd := exec.Command("/bin/df", "-BM", mountpoint)
 	b, err := cmd.Output()
 	if err != nil {
@@ -131,7 +132,7 @@ func checkFreeSpaceMBytes(mountpoint string) (int, os.Error) {
 	fields := getFields(strings.Split(s, "\n")[1])
 	if len(fields) < 5 {
 		log.Println("Too little output from df")
-		return 0, os.NewError("Too little output from df")
+		return 0, errors.New("Too little output from df")
 	}
 	df_mountpoint := fields[5]
 	if df_mountpoint != mountpoint {
@@ -140,12 +141,12 @@ func checkFreeSpaceMBytes(mountpoint string) (int, os.Error) {
 		log.Println(df_mountpoint)
 		log.Println("mountpoint from diskmoose:")
 		log.Println(mountpoint)
-		return 0, os.NewError("df could not check the given mountpoint")
+		return 0, errors.New("df could not check the given mountpoint")
 	}
 	sMBfree := fields[3]
 	if strings.Index(sMBfree, "M") == -1 {
 		log.Println("No \"M\" in output from df")
-		return 0, os.NewError("No \"M\" in output from df")
+		return 0, errors.New("No \"M\" in output from df")
 	}
 	mbfree, err := strconv.Atoi(strings.Split(sMBfree, "M")[0])
 	if err != nil {
@@ -169,7 +170,7 @@ func mooseSays(msg string) string {
 func main() {
 	var freeMBytes int
 	var msg string
-	var err os.Error
+	var err error
 	fmt.Println(mooseSays(fmt.Sprintf("I'll let you know if there are less than %v MB free in /, /tmp, /var, /var/log, /var/cache, /usr or /home. Just let me run in the background.", MIN_MB)))
 	for {
 		for _, mountpoint := range getRelevantMountpoints() {
