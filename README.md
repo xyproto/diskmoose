@@ -16,3 +16,7 @@ A utility for monitoring disk space that looks like this:
                (__)\       )\/\
                    ||----w |
                    ||     ||
+
+GPL2
+
+Alexander Rødseth, 2013

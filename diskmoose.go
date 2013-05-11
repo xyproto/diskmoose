@@ -1,13 +1,13 @@
+package main
+
 /*
  * Program to be run in the background for warning users
- * when partitions are out of disk space
+ * when partitions are out of disk space.
  */
-
-package main
 
 import (
 	"bytes"
-	"errors" // os/exec for newer versions of Go
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -18,10 +18,15 @@ import (
 )
 
 const (
-	WAIT_SEC = 120
-	COWTYPE  = "moose"
-	MIN_MB   = 100
-	VERSION  = 0.2
+	MIN_MB         = 100
+	CHECK_INTERVAL = 120
+	COWTYPE        = "moose"
+	VERSION        = 0.3
+
+	MOUNTCMD  = "/bin/mount"
+	WHOCMD    = "/usr/bin/who"
+	DFCMD     = "/bin/df"
+	COWSAYCMD = "/usr/bin/cowsay"
 )
 
 /*
@@ -32,6 +37,7 @@ const (
    4. Able to use cowsay -f moose and warn users
 */
 
+// Evaluates if the given mount point is relevant for our purposes
 func isRelevant(mountpoint string) bool {
 	switch mountpoint {
 	case "/", "/tmp", "/var", "/var/log", "/var/cache", "/usr", "/home":
@@ -40,9 +46,10 @@ func isRelevant(mountpoint string) bool {
 	return false
 }
 
+// Get all relevant mount points by running MOUNTCMD and then parse the output
 func getRelevantMountpoints() []string {
 	r := make([]string, 0)
-	cmd := exec.Command("/bin/mount")
+	cmd := exec.Command(MOUNTCMD)
 	b, err := cmd.Output()
 	if err != nil {
 		log.Println("Could not run mount")
@@ -61,9 +68,10 @@ func getRelevantMountpoints() []string {
 	return r
 }
 
+// Get all pts files we could wish to write to by running WHOCMD
 func getPtsFiles() []string {
 	r := make([]string, 0)
-	cmd := exec.Command("/usr/bin/who")
+	cmd := exec.Command(WHOCMD)
 	b, err := cmd.Output()
 	if err != nil {
 		log.Println("Could not run who")
@@ -83,7 +91,7 @@ func getPtsFiles() []string {
 	return r
 }
 
-// Write a message to a particular pts device
+// Write a message directly to a given pts device
 func writeToPts(pts, msg string) {
 	filename := "/dev/" + pts
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND, 0666)
@@ -121,7 +129,7 @@ func getFields(s string) []string {
 
 // Get the number of free MB for a given mountpoint
 func checkFreeSpaceMBytes(mountpoint string) (int, error) {
-	cmd := exec.Command("/bin/df", "-BM", mountpoint)
+	cmd := exec.Command(DFCMD, "-BM", mountpoint)
 	b, err := cmd.Output()
 	if err != nil {
 		log.Println("Could not run df")
@@ -158,7 +166,7 @@ func checkFreeSpaceMBytes(mountpoint string) (int, error) {
 
 // Uses cowsay to make a moose say the given message
 func mooseSays(msg string) string {
-	cmd := exec.Command("/usr/bin/cowsay", "-f", COWTYPE, msg)
+	cmd := exec.Command(COWSAYCMD, "-f", COWTYPE, msg)
 	b, err := cmd.Output()
 	if err != nil {
 		log.Println("Could not run cowsay")
@@ -168,16 +176,18 @@ func mooseSays(msg string) string {
 }
 
 func main() {
-	var freeMBytes int
-	var msg string
-	var err error
-	fmt.Println(mooseSays(fmt.Sprintf("I'll let you know if there are less than %v MB free in /, /tmp, /var, /var/log, /var/cache, /usr or /home. Just let me run in the background.", MIN_MB)))
+	var (
+		freeMBytes int
+		msg        string
+		err        error
+	)
+	msg = fmt.Sprintf("I'll let you know if there are less than %v MB free in /, /tmp, /var, /var/log, /var/cache, /usr or /home. Just let me run in the background.", MIN_MB)
+	fmt.Println(mooseSays(msg))
 	for {
 		for _, mountpoint := range getRelevantMountpoints() {
 			freeMBytes, err = checkFreeSpaceMBytes(mountpoint)
 			if err != nil {
-				log.Println("Could not get free space for", mountpoint)
-				log.Println("Aborting.")
+				log.Printf("Could not get free space for %s.\nAborting.", mountpoint)
 				os.Exit(1)
 			}
 			if freeMBytes < MIN_MB { //freeMBytes > 0
@@ -185,6 +195,6 @@ func main() {
 				writeToAll(mooseSays(msg))
 			}
 		}
-		time.Sleep(WAIT_SEC * 1e9)
+		time.Sleep(CHECK_INTERVAL * 1e9)
 	}
 }
