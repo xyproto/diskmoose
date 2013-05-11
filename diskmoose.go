@@ -6,7 +6,6 @@ package main
  */
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -55,8 +54,8 @@ func getRelevantMountpoints() []string {
 		log.Println("Could not run mount")
 		return []string{"/"}
 	}
-	s := bytes.NewBuffer(b).String()
-	var mountpoint string
+	s := string(b)
+	mountpoint := ""
 	for _, line := range strings.Split(s, "\n") {
 		if strings.TrimSpace(line) != "" {
 			mountpoint = getFields(line)[2]
@@ -77,7 +76,7 @@ func getPtsFiles() []string {
 		log.Println("Could not run who")
 		return []string{}
 	}
-	s := bytes.NewBuffer(b).String()
+	s := string(b)
 	for _, line := range strings.Split(s, "\n") {
 		if strings.TrimSpace(line) != "" {
 			if strings.Index(line, ":S.") != -1 {
@@ -135,7 +134,7 @@ func checkFreeSpaceMBytes(mountpoint string) (int, error) {
 		log.Println("Could not run df")
 		return 0, err
 	}
-	s := bytes.NewBuffer(b).String()
+	s := string(b)
 	// Get the fields from the second line, not the headline
 	fields := getFields(strings.Split(s, "\n")[1])
 	if len(fields) < 5 {
@@ -172,7 +171,7 @@ func mooseSays(msg string) string {
 		log.Println("Could not run cowsay")
 		return msg
 	}
-	return bytes.NewBuffer(b).String()
+	return string(b)
 }
 
 func main() {
