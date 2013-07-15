@@ -20,11 +20,11 @@ const (
 	MIN_MB         = 100
 	CHECK_INTERVAL = 120
 	COWTYPE        = "moose"
-	VERSION        = 0.3
+	VERSION        = 0.4
 
-	MOUNTCMD  = "/bin/mount"
+	MOUNTCMD  = "/usr/bin/mount"
 	WHOCMD    = "/usr/bin/who"
-	DFCMD     = "/bin/df"
+	DFCMD     = "/usr/bin/df"
 	COWSAYCMD = "/usr/bin/cowsay"
 )
 
